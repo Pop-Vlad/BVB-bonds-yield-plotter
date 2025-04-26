@@ -10,16 +10,6 @@ data by bond maturity date.
 The project handles both RON- and EUR-denominated bonds, splitting the data and displaying two charts side-by-side. It
 also labels the bonds by their maturity date and ticker symbol, making the analysis easy and intuitive.
 
-## Features
-
-- Automatically downloads the latest bonds listing
-- Extracts only Romanian government bonds (**Tip: Titluri de stat**)
-- Separately processes RON and EUR bonds
-- Fetches and caches Yield to Maturity (YTM) for each bond
-- Randomized delay between requests to avoid rate-limiting
-- Visualizes the data in clear, sorted plots
-- Option to update the cache or use existing cached data
-
 ## Requirements
 
 - Python 3.13+
