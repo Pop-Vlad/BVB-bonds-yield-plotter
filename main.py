@@ -9,6 +9,7 @@ import traceback
 
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import requests
 from bs4 import BeautifulSoup
 
@@ -85,31 +86,52 @@ def save_cached_data(cache_file, data):
 
 def prepare_plot_data(maturities, results):
     sorted_items = sorted(results.items(), key=lambda x: datetime.datetime.strptime(maturities[x[0]], '%d.%m.%Y'))
-    x_labels = [f"{maturities[code]} ({code})" for code, _ in sorted_items]
+    x_dates = [datetime.datetime.strptime(maturities[code], '%d.%m.%Y') for code, _ in sorted_items]
     y_values = [ytm for _, ytm in sorted_items]
-    return x_labels, y_values
+    labels = [f"{maturities[code]} ({code})" for code, _ in sorted_items]
+    return x_dates, y_values, labels
+
+
+import random
+
+
+def plot_series(ax, maturities, results, color, title):
+    x_dates, y_values, labels = prepare_plot_data(maturities, results)
+    ax.plot(x_dates, y_values, marker='o', linestyle='-', color=color)
+    ax.set_title(title)
+    ax.set_xlabel("Maturity Date")
+    ax.set_ylabel("YTM (%)")
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d-%b-%Y'))
+    ax.tick_params(axis='x', rotation=45)
+    ax.grid(True)
+
+    x_offset = 10
+    y_offset = 80
+    i = 0
+    for x, y, label in zip(x_dates, y_values, labels):
+        # offset to reduce overlap
+        i += 1
+        y_offset *= -1
+        ax.annotate(
+            label,
+            xy=(x, y),
+            xytext=(x_offset * (1, 1, -1, -1)[i%4], y_offset),  # offset in points above the point
+            textcoords='offset points',
+            ha='center',
+            fontsize=8,
+            rotation='vertical',
+            arrowprops=dict(arrowstyle='-', lw=0.5, color='gray')
+        )
 
 
 def plot_ytm_all(maturities_ron, results_ron, maturities_eur, results_eur):
     fig, axs = plt.subplots(2, 1, figsize=(14, 12))
-
     if results_ron:
-        x_labels_ron, y_values_ron = prepare_plot_data(maturities_ron, results_ron)
-        axs[0].plot(x_labels_ron, y_values_ron, marker='o', linestyle='-', color='blue')
-        axs[0].set_title("Yield to Maturity (YTM) of Titluri de stat - RON")
-        axs[0].set_xlabel("Maturity Date (Symbol)")
-        axs[0].set_ylabel("YTM (%)")
-        axs[0].tick_params(axis='x', rotation=45)
-        axs[0].grid(True)
+        plot_series(axs[0], maturities_ron, results_ron, 'blue', "Yield to Maturity (YTM) of Titluri de stat - RON")
 
     if results_eur:
-        x_labels_eur, y_values_eur = prepare_plot_data(maturities_eur, results_eur)
-        axs[1].plot(x_labels_eur, y_values_eur, marker='o', linestyle='-', color='green')
-        axs[1].set_title("Yield to Maturity (YTM) of Titluri de stat - EUR")
-        axs[1].set_xlabel("Maturity Date (Symbol)")
-        axs[1].set_ylabel("YTM (%)")
-        axs[1].tick_params(axis='x', rotation=45)
-        axs[1].grid(True)
+        plot_series(axs[1], maturities_eur, results_eur, 'green', "Yield to Maturity (YTM) of Titluri de stat - EUR")
 
     plt.tight_layout()
     plt.show()
@@ -142,7 +164,7 @@ def main(update_cache=False):
             ytm = get_ytm(code)
             if ytm is not None:
                 cached_data[code] = ytm
-            time.sleep(random.uniform(0.5, 1.5))  # Random delay between 0.5 and 1.5 seconds
+            time.sleep(random.uniform(0.3, 0.7))  # Random delay
 
         if ytm is not None:
             if code.endswith('E'):
